@@ -12,3 +12,5 @@ pymongo
 python-multipart
 tokenizers
 uvicorn
+fastapi
+httpx

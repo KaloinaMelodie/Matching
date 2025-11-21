@@ -178,3 +178,4 @@ talentmatch-2-vertex*.json
 
 requirement.txt
 note.txt
+.env.production
