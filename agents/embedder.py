@@ -5,6 +5,10 @@ import os
 from google.api_core.exceptions import GoogleAPIError
 import vertexai
 from vertexai.language_models import TextEmbeddingModel
+import logging
+
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+logger = logging.getLogger(__name__)
 
 try:
     from vertexai.language_models import TextEmbeddingInput
@@ -15,13 +19,14 @@ except Exception:
 
 GCP_PROJECT_ID = os.getenv("GCP_PROJECT_ID", "")
 GCP_VERTEX_LOCATION = os.getenv("GCP_VERTEX_LOCATION", "us-central1")
-GCP_EMBED_MODEL = os.getenv("GCP_EMBED_MODEL", "text-multilingual-embedding-002")
+GCP_EMBED_MODEL = os.getenv("GCP_EMBED_MODEL", "gemini-embedding-001")
 _vertex_initialized = False
 _text_embed_model = None
 
 def _ensure_vertex_init():
     global _vertex_initialized, _text_embed_model
     if not _vertex_initialized:
+        logging.info("ensure")
         if not GCP_PROJECT_ID:
             raise RuntimeError("GCP_PROJECT_ID manquant (env).")
         if not GCP_VERTEX_LOCATION:
