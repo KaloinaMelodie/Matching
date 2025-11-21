@@ -1,0 +1,14 @@
+beanie 
+motor 
+pydantic 
+python-dotenv
+vertexai
+google-cloud-aiplatform
+pdfminer.six
+python-docx
+python-jose
+passlib[bcrypt]
+pymongo
+python-multipart
+tokenizers
+uvicorn

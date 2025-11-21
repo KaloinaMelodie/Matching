@@ -1,0 +1,48 @@
+{
+    "informations_personnelles": {
+        "nom": "",
+        "prenom": "",
+        "adresse": "",
+        "sexe": "",
+        "date_de_naissance": "",
+        "email": "",
+        "numero_telephone": ""
+    },
+    "experiences_professionnelles": [
+        {
+        "titre_du_poste": "",
+        "nom_de_l_entreprise": "",
+        "dates_de_debut_et_de_fin": "",
+        "missions_realisees": ""
+        }
+    ],
+    "formation": [
+        {
+        "diplome": "",
+        "etablissement": "",
+        "dates_de_debut_et_de_fin": "",
+        "specialite": ""
+        }
+    ],
+    "langues": [
+        {
+        "langue_maitrisee": "",
+        "niveau_de_maitrise": ""
+        }
+    ],
+    "certifications": [
+        {
+        "titre": "",
+        "dates_d_obtention": ""
+        }
+    ],
+    "passe_temps": [
+        {
+        "nom": ""
+        }
+    ],
+    "competences": {
+        "competences_techniques": [],
+        "competences_comportementales_soft_skills": []
+    }
+}
