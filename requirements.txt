@@ -15,3 +15,5 @@ uvicorn
 fastapi
 httpx
 pydantic[email]
+pymilvus
+tiktoken

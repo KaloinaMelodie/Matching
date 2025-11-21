@@ -5,6 +5,7 @@ from routers.offreRoute import router as  offreRoute
 from routers.matchingRoute import router as  matchingRoute
 from routers.auth import router as  authRoute
 from routers.extractRoute import router as  extractRoute
+from routers.milvusRoute import router as milvusRoute
 
 ROUTERS = [
     userRoute,
@@ -12,7 +13,8 @@ ROUTERS = [
     offreRoute,
     matchingRoute,
     authRoute,
-    extractRoute
+    extractRoute,
+    milvusRoute
 ]
 
 def include_routes(app: FastAPI, api_prefix: str = "/api"):
