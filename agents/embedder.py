@@ -2,10 +2,11 @@ from typing import List
 import requests
 import httpx    
 import os
-from google.api_core.exceptions import GoogleAPIError
+from google.api_core.exceptions import GoogleAPIError, ResourceExhausted
 import vertexai
 from vertexai.language_models import TextEmbeddingModel
 import logging
+import time
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
@@ -22,6 +23,9 @@ GCP_VERTEX_LOCATION = os.getenv("GCP_VERTEX_LOCATION", "us-central1")
 GCP_EMBED_MODEL = os.getenv("GCP_EMBED_MODEL", "gemini-embedding-001")
 _vertex_initialized = False
 _text_embed_model = None
+
+MAX_RETRIES = 5        
+INITIAL_DELAY = 30  
 
 def _ensure_vertex_init():
     global _vertex_initialized, _text_embed_model
@@ -49,18 +53,37 @@ def generate_embedding_gemini(text: str) -> List[float]:
     except Exception as e:
         raise Exception(f"Vertex AI error: {e}")
 
+
 def embed_query_batch_gemini(texts: List[str], task_type: str = "RETRIEVAL_DOCUMENT") -> List[List[float]]:
     if not texts:
         return []
-    try:
-        _ensure_vertex_init()
-        if _HAS_TEXT_EMBEDDING_INPUT:
-            inputs = [TextEmbeddingInput(text=t, task_type=task_type) for t in texts]
-            resp = _text_embed_model.get_embeddings(inputs)
-        else:
-            resp = _text_embed_model.get_embeddings(texts)
-        return [emb.values for emb in resp]
-    except GoogleAPIError as e:
-        raise Exception(f"Vertex AI error: {e.__class__.__name__}: {e}")
-    except Exception as e:
-        raise Exception(f"Vertex AI error: {e}")
+
+    retry = 0
+    delay = INITIAL_DELAY
+
+    while retry < MAX_RETRIES:
+        try:
+            _ensure_vertex_init()
+
+            if _HAS_TEXT_EMBEDDING_INPUT:
+                inputs = [TextEmbeddingInput(text=t, task_type=task_type) for t in texts]
+                resp = _text_embed_model.get_embeddings(inputs)
+            else:
+                resp = _text_embed_model.get_embeddings(texts)
+
+            return [emb.values for emb in resp]
+
+        except ResourceExhausted as e:
+            print(f"[429] Quota exceeded. Retry {retry+1}/{MAX_RETRIES} dans {delay} sec...")
+            time.sleep(delay)
+            retry += 1
+            delay *= 2  
+            continue
+
+        except GoogleAPIError as e:
+            raise Exception(f"Vertex AI error: {e.__class__.__name__}: {e}")
+
+        except Exception as e:
+            raise Exception(f"Vertex AI error: {e}")
+
+    raise Exception("Vertex AI error: 429 quota exceeded too many times. Abandon.")
