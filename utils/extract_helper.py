@@ -61,6 +61,68 @@ def try_format_date_yyyy_mm_dd(value: Optional[str]) -> str:
 
     return v
 
+def offre_to_text(offre_json: Dict[str, Any]) -> Dict[str, str]:
+    def normaliser_texte(value: Any) -> str:
+        if value is None:
+            return ""
+        if isinstance(value, list):
+            return " ".join(
+                str(item).strip()
+                for item in value
+                if isinstance(item, str) and item.strip()
+            )
+        return str(value).strip()
+
+    champs = []
+
+    titre = offre_json.get("titre")
+    if titre:
+        champs.append(f"Titre: {titre}")
+
+    entreprise = offre_json.get("entreprise")
+    if entreprise:
+        champs.append(f"Entreprise: {entreprise}")
+
+    contrat = offre_json.get("contrat")
+    if contrat:
+        champs.append(f"Type de contrat: {contrat}")
+
+    date_limite = offre_json.get("date_limite")
+    if date_limite:
+        champs.append(f"Date limite de candidature: {date_limite}")
+
+    reference = offre_json.get("reference")
+    if reference:
+        champs.append(f"Référence de l'offre: {reference}")
+
+    avantages_entreprise = offre_json.get("avantages_entreprise")
+    if avantages_entreprise:
+        champs.append(f"Avantages entreprise: {normaliser_texte(avantages_entreprise)}")
+
+    description = normaliser_texte(offre_json.get("description"))
+    if description:
+        champs.append(f"Description du poste: {description}")
+
+    mission = normaliser_texte(offre_json.get("mission"))
+    if mission:
+        champs.append(f"Missions: {mission}")
+
+    profil = normaliser_texte(offre_json.get("profil"))
+    if profil:
+        champs.append(f"Profil recherché: {profil}")
+
+    lien_offre = offre_json.get("lien_offre")
+    if lien_offre:
+        champs.append(f"Lien de l'offre: {lien_offre}")
+
+    lien_description = offre_json.get("lien_description")
+    if lien_description and lien_description != lien_offre:
+        champs.append(f"Lien description détaillée: {lien_description}")
+
+    contenu = "\n".join(champs)
+
+    return {"contenu": contenu}
+
 # --- Générateur de contenu ------------------------------------------------
 
 def make_contenu_from_candidat(c) -> str:

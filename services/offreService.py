@@ -3,7 +3,7 @@ from core.exceptions import NotFoundError
 import typing
 from typing import List
 from beanie import PydanticObjectId
-from beanie.operators import NotIn
+from beanie.operators import NotIn, In
 
 async def createOffre(offre: Offre) -> Offre:
     return await offre.insert()
@@ -24,6 +24,10 @@ async def get_offres_chunk_not_in_ids(
         return await Offre.find(
             NotIn(Offre.id, ids_to_exclude)
         ).limit(limit).to_list()
+
+async def get_offres_by_ids(ids: List[str]) -> List["Offre"]:
+        object_ids = [PydanticObjectId(_id) for _id in ids]
+        return await Offre.find(In(Offre.id, object_ids)).to_list()
 
 async def getOffreById(offreId: str) -> Offre:
     offre = await Offre.get(offreId)

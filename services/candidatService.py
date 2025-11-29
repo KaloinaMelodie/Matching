@@ -5,6 +5,7 @@ from beanie.operators import Set
 from typing import List
 from beanie import PydanticObjectId
 from beanie.operators import NotIn
+from beanie.operators import In
 
 from utils.extract_helper import make_contenu_from_candidat
 
@@ -31,6 +32,10 @@ async def get_candidates_chunk_not_in_ids(
         return await Candidat.find(
             NotIn(Candidat.id, ids_to_exclude)
         ).limit(limit).to_list()
+
+async def get_candidats_by_ids(ids: List[str]) -> List["Candidat"]:
+        object_ids = [PydanticObjectId(_id) for _id in ids]
+        return await Candidat.find(In(Candidat.id, object_ids)).to_list()
 
 async def getCandidatById(candidat_id: str) -> Candidat:
     candidat = await Candidat.get(candidat_id)

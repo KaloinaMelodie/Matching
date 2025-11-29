@@ -303,12 +303,12 @@ class MilvusService:
             search_params={"metric_type": "COSINE"}, 
             partition_names=list(partitions) if partitions else [],
             group_by_field="doc_id",
-            group_size=2, # p to 2 entities to return from each group otherwise 1 per group
+            group_size=1, # p to 2 entities to return from each group otherwise 1 per group
             # filter='partition_key in ["459923178704175677"]',
             output_fields=["id","doc_id","content"]
             )
         # logger.info(res)
-        MIN_SCORE = 0.85
+        MIN_SCORE = 0.65
         res = clean_milvus_results(res)
         res = [r for r in res if r.get("score", 0) >= MIN_SCORE]       
         

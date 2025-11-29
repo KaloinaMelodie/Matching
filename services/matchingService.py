@@ -1,88 +1,74 @@
+from services.milvusService import MilvusService
 from services import candidatService
 from services import offreService
 
 from threading import Thread, Event
 from time import sleep
 import os
+import logging
+
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+logger = logging.getLogger(__name__)
 
 
+async def match_offres_for_cv(cv_candidat, top_n: int | None = None):
+    raw_results = MilvusService().search(
+        query=cv_candidat.contenu,
+        top_n=top_n or 10,
+        partitions=["offres_vector"],
+    )
+    if not raw_results:
+        return []
 
+    offre_ids_ordered = [r["doc_id"] for r in raw_results]
 
-async def match_offres_for_cv(cv_id, top_n=None):
-    model = None
+    offres = await offreService.get_offres_by_ids(offre_ids_ordered)
 
-    cv_candidat = await candidatService.getCandidatById(cv_id)
-    cv_embedding = model.encode(cv_candidat.contenu, convert_to_tensor=True)
-    offres = await offreService.getAllOffres()
-    offre_texts = [offre.contenu for offre in offres]
-    offre_embeddings= model.encode(offre_texts, convert_to_tensor=True)
-
-    """Retourne les offres les plus pertinentes pour un CV donné"""
-    # scores = util.cos_sim(cv_embedding, offre_embeddings)[0]
-    scores = None
-    best_idx = scores.argsort(descending=True)
+    offres_by_id = {str(offre.id): offre for offre in offres}
 
     results = []
-    for idx in best_idx:
-        score_val = float(scores[idx])
-        if score_val != 0:
-            offre = offres[idx]
-            results.append({
-                "offre": offre,
-                "score": score_val,
-            })
-        else:
-            break 
+    for r in raw_results:
+        offre_id = r["doc_id"]
+        offre = offres_by_id.get(offre_id)
+        if not offre:
+            continue
+        results.append({
+            "offre": offre,
+            "score": r.get("score", 0.0),
+        })
 
-    # 5) Limite top_n si demandée
     if top_n is not None:
         return results[:top_n]
     return results
 
 
 
+async def match_cvs_for_offre(offre, top_n: int | None = None):
+    raw_results = MilvusService().search(
+        query=offre.contenu,
+        top_n=top_n or 10,
+        partitions=["cvs_vector"],
+    )
+    if not raw_results:
+        return []
 
-async def match_cvs_for_offre(offre_id, top_n=None):
-    print("matching")
-    model = None
+    cv_ids_ordered = [r["doc_id"] for r in raw_results]
 
-    offre = await offreService.getOffreById(offre_id)
-    print("Offre ok")
-    cvs = await candidatService.getAllCandidats()
-    print("Candidat ok")
+    cvs = await candidatService.get_candidats_by_ids(cv_ids_ordered)
 
-    # Encodage
-    print("Encodage")
-    offre_embedding = model.encode(offre.contenu, convert_to_tensor=True)
-    cv_texts = [cv.contenu for cv in cvs]
-    cv_embeddings = model.encode(cv_texts, convert_to_tensor=True)
-
-    # Similarités
-    print("Similarités")
-
-    # scores = util.cos_sim(offre_embedding, cv_embeddings)[0]
-    scores = None
-
-    # Tri décroissant
-    print("Tri décroissant")
-    
-    best_idx = scores.argsort(descending=True)
+    cvs_by_id = {str(cv.id): cv for cv in cvs}
 
     results = []
-    print("Best")
+    for r in raw_results:
+        cv_id = r["doc_id"]
+        cv = cvs_by_id.get(cv_id)
+        if not cv:
+            continue
+        results.append({
+            "candidat": cv,
+            "score": r.get("score", 0.0),
+        })
 
-    for idx in best_idx:
-        score_val = float(scores[idx])
-        if score_val != 0:  
-            candidat = cvs[idx]
-            results.append({
-                "candidat": candidat,
-                "score": score_val,
-            })
-        else:
-            break  
-
-    
     if top_n is not None:
         return results[:top_n]
     return results

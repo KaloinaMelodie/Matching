@@ -1,4 +1,9 @@
 from fastapi import APIRouter
+from models.offre import Offre
+from schemas.offreSchema import OffreCreateSchema
+from models.candidat import Candidat
+from schemas.candidatSchema import CandidatCreateSchema
+from utils.extract_helper import make_contenu_from_candidat,offre_to_text
 from controllers import matchingController as ctrl 
 from typing import Optional
 import logging
@@ -12,14 +17,16 @@ router = APIRouter(
     responses={404: {"description": "Page non trouvée"}}
 )
 
+    
+@router.get("/cv" )
+async def createCandidat(candidat: CandidatCreateSchema,top_n: Optional[int] = 10):
+    candidatModel = Candidat(**candidat.dict())
+    candidatModel.contenu = make_contenu_from_candidat(candidatModel) 
+    return await ctrl.cvMatchOffres(candidatModel,top_n)
 
-@router.get("/cv/{candidat_id}" )
-async def cv_get_offres(candidat_id: str,top_n: Optional[int] = 10):
-    logger.info(candidat_id+" Tonga ato "+ str(top_n))
-    return await ctrl.cvMatchOffres(candidat_id,top_n)
 
-
-@router.get("/offre/{offre_id}")
-async def offres_get_candidats(offre_id: str,top_n: Optional[int] = 10):
-    logger.info(offre_id+" Tonga ato")
-    return await ctrl.offreMatchCandidats(offre_id,top_n)
+@router.get("/offre" )
+async def createCandidat(offre: OffreCreateSchema,top_n: Optional[int] = 10):
+    offreModel = Offre(**offre.dict())
+    offreModel.contenu = offre_to_text(offre.dict())["contenu"]
+    return await ctrl.offreMatchCandidats(offreModel,top_n)
