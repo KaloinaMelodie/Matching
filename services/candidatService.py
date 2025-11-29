@@ -1,6 +1,10 @@
+import typing
 from models.candidat import Candidat
 from core.exceptions import NotFoundError, ConflictError
 from beanie.operators import Set
+from typing import List
+from beanie import PydanticObjectId
+from beanie.operators import NotIn
 
 from utils.extract_helper import make_contenu_from_candidat
 
@@ -14,6 +18,19 @@ async def createCandidat(candidat: Candidat) -> Candidat:
 
 async def getAllCandidats():
     return await Candidat.find_all().to_list()
+
+async def get_candidates_chunk_not_in_ids(
+        existing_ids: typing.Set[str],
+        limit: int = 100
+    ) -> List["Candidat"]:
+        if not existing_ids:
+            return await Candidat.find_all().limit(limit).to_list()
+
+        ids_to_exclude = [PydanticObjectId(_id) for _id in existing_ids]
+
+        return await Candidat.find(
+            NotIn(Candidat.id, ids_to_exclude)
+        ).limit(limit).to_list()
 
 async def getCandidatById(candidat_id: str) -> Candidat:
     candidat = await Candidat.get(candidat_id)

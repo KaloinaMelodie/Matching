@@ -34,7 +34,7 @@ class MilvusService:
             schema.add_field(field_name="id", datatype=DataType.VARCHAR, is_primary=True,max_length=300)
             schema.add_field(field_name="doc_id", datatype=DataType.VARCHAR,max_length=300)            
             schema.add_field(field_name="content", datatype=DataType.VARCHAR, max_length=10000)
-            schema.add_field(field_name="vector", datatype=DataType.FLOAT_VECTOR, dim=768)
+            schema.add_field(field_name="vector", datatype=DataType.FLOAT_VECTOR, dim=3072)
             index_params = self.client.prepare_index_params()
             index_params.add_index(
                 field_name="vector",
@@ -143,6 +143,42 @@ class MilvusService:
         logger.info(results)
 
         return results
+    
+    def list_existing_cv_ids(self) -> set[str]:
+        filter_expr = "id is not null"
+
+        results = self.client.query(
+            collection_name=self.collection_name,
+            partition_names=["cvs_vector"],
+            filter=filter_expr,
+            group_by_field="doc_id",
+            group_size=1,
+            output_fields=["doc_id"]
+        )
+
+        existing_ids: set[str] = set()
+        for hit in results:
+            existing_ids.add(str(hit["doc_id"]))
+
+        return existing_ids
+    
+    def list_existing_offre_ids(self) -> set[str]:
+        filter_expr = "id is not null"
+
+        results = self.client.query(
+            collection_name=self.collection_name,
+            partition_names=["offres_vector"],
+            filter=filter_expr,
+            group_by_field="doc_id",
+            group_size=1,
+            output_fields=["doc_id"]
+        )
+
+        existing_ids: set[str] = set()
+        for hit in results:
+            existing_ids.add(str(hit["doc_id"]))
+
+        return existing_ids
 
     def list_offres(self):
         filter = 'id is not null'
@@ -156,9 +192,14 @@ class MilvusService:
         return results
        
 
+       
     async def bulk_insert_cvs_to_milvus(self):
-        # cvs = fetch_cvs_to_create()
-        cvs = await candidatService.getAllCandidats()
+        existing_ids = self.list_existing_cv_ids()
+        logger.info("CVs déjà présents dans Milvus: %s", len(existing_ids))
+        cvs = await candidatService.get_candidates_chunk_not_in_ids(
+            existing_ids=existing_ids,
+            limit=5
+        )
         message = ""
         if not cvs:
             message = "Aucun cv à insérer."
@@ -167,12 +208,12 @@ class MilvusService:
         df = pd.DataFrame([cv.dict() for cv in cvs])    
         # vectors = embed_query_batch_gemini(df["contenu"].tolist())         
         # delete ids 
-        self._clean_cv_partition()
-        logger.warning("cvs partition supprimés dans Milvus.")
+        # self._clean_cv_partition()
+        # logger.warning("cvs partition supprimés dans Milvus.")
         self._create_cv_partition_if_not_exist()
         insert_data = []
         for i, row in df.iterrows():
-            doc_id = row["id"]
+            doc_id = str(row["id"])
             content_chunks = split_into_chunks(row["contenu"])
             if not content_chunks:
                 logger.warning(f"Aucun chunk généré pour {doc_id}")
@@ -201,34 +242,39 @@ class MilvusService:
         return message
 
     async def bulk_insert_offres_to_milvus(self):
-        # offres = fetch_offres_to_create()
-        offres = await offreService.getAllOffres()
+        existing_ids = self.list_existing_offre_ids()
+        logger.info("Offres déjà présents dans Milvus: %s", len(existing_ids))
+        offres = await offreService.get_offres_chunk_not_in_ids(
+            existing_ids=existing_ids,
+            limit=5
+        )
         message = ""
         if not offres:
             message = "Aucun offre à insérer."
             logger.info(message)
             return message
-        df = pd.DataFrame([offre.dict() for offre in offres])
-       
-        self._clean_offre_partition()
-        logger.warning(f"partition offres supprimés dans Milvus.")
+        df = pd.DataFrame([offre.dict() for offre in offres])    
+        # vectors = embed_query_batch_gemini(df["contenu"].tolist())         
+        # delete ids 
+        # self._clean_offre_partition()
+        # logger.warning("offres partition supprimés dans Milvus.")
         self._create_offre_partition_if_not_exist()
         insert_data = []
         for i, row in df.iterrows():
-            doc_id = row["id"]
+            doc_id = str(row["id"])
             content_chunks = split_into_chunks(row["contenu"])
             if not content_chunks:
                 logger.warning(f"Aucun chunk généré pour {doc_id}")
                 continue
-            chunk_vectors = embed_query_batch_gemini(content_chunks) 
+            chunk_vectors = embed_query_batch_gemini(content_chunks)
             logger.warning(f"doc {doc_id} ")
             for idx, chunk_text in enumerate(content_chunks):
                 logger.warning(f"chunk {idx} ")
                 insert_data.append({
                     "id": f"{doc_id}_{idx}",
                     "doc_id": doc_id,                   
-                    "content": chunk_text[:10000], 
-                    "vector": chunk_vectors[idx],
+                    "content": chunk_text[:10000],  # Truncation sécurité
+                    "vector": chunk_vectors[idx],  
                 })
         if not insert_data:
             logger.warning("Aucune donnée insérée dans Milvus (tous les contenus vides ?)")

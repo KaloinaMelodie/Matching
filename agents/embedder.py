@@ -40,18 +40,36 @@ def _ensure_vertex_init():
         _vertex_initialized = True
 
 def generate_embedding_gemini(text: str) -> List[float]:
-    try:
-        _ensure_vertex_init()
-        if _HAS_TEXT_EMBEDDING_INPUT:
-            inputs = [TextEmbeddingInput(text=text, task_type="RETRIEVAL_QUERY")]
-            resp = _text_embed_model.get_embeddings(inputs)
-        else:
-            resp = _text_embed_model.get_embeddings([text])
-        return resp[0].values
-    except GoogleAPIError as e:
-        raise Exception(f"Vertex AI error: {e.__class__.__name__}: {e}")
-    except Exception as e:
-        raise Exception(f"Vertex AI error: {e}")
+    retry = 0
+    delay = INITIAL_DELAY
+
+    while retry < MAX_RETRIES:
+        try:
+            _ensure_vertex_init()
+
+            if _HAS_TEXT_EMBEDDING_INPUT:
+                inputs = [TextEmbeddingInput(text=text, task_type="RETRIEVAL_QUERY")]
+                resp = _text_embed_model.get_embeddings(inputs)
+
+            else:
+                resp = _text_embed_model.get_embeddings([text])
+
+            return resp[0].values
+
+        except ResourceExhausted as e:
+            print(f"[429] Quota exceeded. Retry {retry+1}/{MAX_RETRIES} dans {delay} sec...")
+            time.sleep(delay)
+            retry += 1
+            delay *= 2   
+            continue
+
+        except GoogleAPIError as e:
+            raise Exception(f"Vertex AI error: {e.__class__.__name__}: {e}")
+
+        except Exception as e:
+            raise Exception(f"Vertex AI error: {e}")
+
+    raise Exception("Vertex AI error: quota exceeded too many times (429). Abandon.")
 
 
 def embed_query_batch_gemini(texts: List[str], task_type: str = "RETRIEVAL_DOCUMENT") -> List[List[float]]:
