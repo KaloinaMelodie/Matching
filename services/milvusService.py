@@ -18,7 +18,7 @@ milvus_api_key = os.getenv('MILVUS_APIKEY')
 
 class MilvusService:
     def __init__(self):
-        connections.connect(alias="default",uri=f"https://{milvus_host}",token=milvus_api_key ) #host=settings.milvus_host,port=settings.milvus_port
+        connections.connect(alias="default",uri=f"https://{milvus_host}",token=milvus_api_key ) 
         self.collection_name = "cvoffre_collection"
         # self.server_addr = f"http://{settings.milvus_host}:{settings.milvus_port}"
         self.server_addr = f"https://{milvus_host}" 
