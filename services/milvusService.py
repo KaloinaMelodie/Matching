@@ -13,13 +13,16 @@ from services import offreService
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
 
+milvus_host = os.getenv('MILVUS_HOST')
+milvus_api_key = os.getenv('MILVUS_APIKEY')
+
 class MilvusService:
     def __init__(self):
-        connections.connect(alias="default",uri=f"https://{os.getenv("MILVUS_HOST")}",token=os.getenv("MILVUS_APIKEY") ) #host=settings.milvus_host,port=settings.milvus_port
+        connections.connect(alias="default",uri=f"https://{milvus_host}",token=milvus_api_key ) #host=settings.milvus_host,port=settings.milvus_port
         self.collection_name = "cvoffre_collection"
         # self.server_addr = f"http://{settings.milvus_host}:{settings.milvus_port}"
-        self.server_addr = f"https://{os.getenv("MILVUS_HOST")}" 
-        self.client = MilvusClient(uri=self.server_addr,token=os.getenv("MILVUS_APIKEY"))
+        self.server_addr = f"https://{milvus_host}" 
+        self.client = MilvusClient(uri=self.server_addr,token=milvus_api_key)
         self._create_collection_if_not_exist()
         self._create_cv_partition_if_not_exist()
         self._create_offre_partition_if_not_exist()
