@@ -9,7 +9,8 @@ app = FastAPI()
 origins = [
     "http://localhost:5173",
     "http://localhost:4173",
-    "https://front-talentmatch.onrender.com"
+    "https://front-talentmatch.onrender.com",
+    "https://front-matching.onrender.com"
         # port de Vite
 ]
 
