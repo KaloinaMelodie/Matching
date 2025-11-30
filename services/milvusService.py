@@ -196,12 +196,12 @@ class MilvusService:
        
 
        
-    async def bulk_insert_cvs_to_milvus(self):
+    async def bulk_insert_cvs_to_milvus(self,n=100):
         existing_ids = self.list_existing_cv_ids()
         logger.info("CVs déjà présents dans Milvus: %s", len(existing_ids))
         cvs = await candidatService.get_candidates_chunk_not_in_ids(
             existing_ids=existing_ids,
-            limit=5
+            limit=n
         )
         message = ""
         if not cvs:
@@ -244,12 +244,12 @@ class MilvusService:
         logger.info(message)
         return message
 
-    async def bulk_insert_offres_to_milvus(self):
+    async def bulk_insert_offres_to_milvus(self,n=100):
         existing_ids = self.list_existing_offre_ids()
         logger.info("Offres déjà présents dans Milvus: %s", len(existing_ids))
         offres = await offreService.get_offres_chunk_not_in_ids(
             existing_ids=existing_ids,
-            limit=5
+            limit=n
         )
         message = ""
         if not offres:

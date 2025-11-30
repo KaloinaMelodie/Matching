@@ -107,9 +107,9 @@ def read_cvs():
         raise Exception(str(e))
     
 @router.post("/cvs_milvus")
-async def update_cvs_milvus():
+async def update_cvs_milvus(n: Optional[int] = 100):
     try:
-        message = await MilvusService().bulk_insert_cvs_to_milvus()
+        message = await MilvusService().bulk_insert_cvs_to_milvus(n)
         return success_response(message=message,status_code=201)
     except HTTPException as he:
         raise he
@@ -120,9 +120,9 @@ async def update_cvs_milvus():
         raise Exception(str(e))
 
 @router.post("/offres_milvus")
-async def update_offres_milvus():
+async def update_offres_milvus(n: Optional[int] = 100):
     try:
-        message = await MilvusService().bulk_insert_offres_to_milvus()
+        message = await MilvusService().bulk_insert_offres_to_milvus(n)
         return success_response(message=message,status_code=201)
     except HTTPException as he:
         raise he
