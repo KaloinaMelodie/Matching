@@ -1,4 +1,5 @@
 from fastapi import FastAPI
+from utils.utils import debug_print_service_account
 from core.database import initiate_database
 from routers import include_routes, auth
 from fastapi.middleware.cors import CORSMiddleware
@@ -34,3 +35,4 @@ include_routes(app)
 def read_root():
     return {"Hello": "World"}
 
+debug_print_service_account("keys/talentmatch-2-vertex-a82db02697d9.json")

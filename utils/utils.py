@@ -145,3 +145,33 @@ def group_training_metadata(search_results: List[Dict[str, Any]], limit_per_medi
             m["videos"] = m["videos"][:limit_per_media]
 
     return metas
+
+
+import json
+from pathlib import Path
+
+def debug_print_service_account(path_str: str) -> None:
+    path = Path(path_str)
+
+    print(f"Chemin : {path.absolute()}")
+
+    if not path.exists():
+        print("❌ Fichier introuvable")
+        return
+
+    try:
+        raw = path.read_text(encoding="utf-8")
+        print("=== Contenu brut du fichier ===")
+        print(raw)
+        print("=== Fin contenu brut ===")
+
+        data = json.loads(raw)
+        print("\n=== Contenu JSON parsé (formaté) ===")
+        print(json.dumps(data, indent=2))
+        print("=== Fin JSON parsé ===")
+
+    except json.JSONDecodeError as e:
+        print(f"❌ JSONDecodeError : {e}")
+    except Exception as e:
+        print(f"❌ Autre erreur : {e}")
+
