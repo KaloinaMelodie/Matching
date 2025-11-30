@@ -18,14 +18,14 @@ router = APIRouter(
 )
 
     
-@router.get("/cv" )
+@router.post("/cv" )
 async def createCandidat(candidat: CandidatCreateSchema,top_n: Optional[int] = 10):
     candidatModel = Candidat(**candidat.dict())
     candidatModel.contenu = make_contenu_from_candidat(candidatModel) 
     return await ctrl.cvMatchOffres(candidatModel,top_n)
 
 
-@router.get("/offre" )
+@router.post("/offre" )
 async def createCandidat(offre: OffreCreateSchema,top_n: Optional[int] = 10):
     offreModel = Offre(**offre.dict())
     offreModel.contenu = offre_to_text(offre.dict())["contenu"]
